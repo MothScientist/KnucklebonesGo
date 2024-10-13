@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.22.5
+FROM golang:1.22.5-bookworm
 
 WORKDIR /app
 
@@ -10,8 +10,8 @@ RUN go mod download
 
 COPY *.go ./
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o /docker-knucklebones-go
+RUN go build -o docker-knucklebones-go
 
 EXPOSE 8080
 
-CMD ["/docker-knucklebones-go"]
+CMD ["/app/docker-knucklebones-go"]
