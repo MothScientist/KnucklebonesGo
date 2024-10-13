@@ -13,5 +13,3 @@ RUN go build -o docker-knucklebones-go
 RUN rm -f *.go && rm -f go.mod && rm -f go.sum
 
 EXPOSE 8080
-
-CMD ["./docker-knucklebones-go"]
