@@ -18,7 +18,7 @@ type player struct {
 }
 
 func main() {
-	// Точка входа
+	// entry point
 
 	player_0 := player{
 		dice: [][]int{
