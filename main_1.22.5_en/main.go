@@ -66,42 +66,9 @@ func main() {
 		step = !step // pass the turn to another player
 
 		// we print the players' fields:
-		// TODO - выделить в отдельную функцию
-		fmt.Println(player_0.name)
-		for column := range player_0.dice {
-			for row := range player_0.dice[column] {
-				state := player_0.dice[row][column]
-				if state != 0 {
-					fmt.Print(state)
-				} else {
-					fmt.Print(" ")
-				}
-				fmt.Print(" ")
-			}
-			fmt.Print("\n")
-		}
-
-		fmt.Print("\n")
-		fmt.Printf("Score: %d", player_0.points)
-
+		printPlayerFields(&player_0)
 		fmt.Print("\n\n\n")
-
-		fmt.Println(player_1.name)
-		for column := range player_1.dice {
-			for row := range player_1.dice[column] {
-				state := player_1.dice[row][2-column] // "2 - column" it is necessary, since we output the matrix of the second player in the direction to the matrix of the first player
-				if state != 0 {
-					fmt.Print(state)
-				} else {
-					fmt.Print(" ")
-				}
-				fmt.Print(" ")
-			}
-			fmt.Print("\n")
-		}
-
-		fmt.Print("\n")
-		fmt.Printf("Score: %d", player_1.points)
+		printPlayerFields(&player_1)
 
 		// take the players' data depending on the move
 		if step {
@@ -281,4 +248,28 @@ func getUniqueElements[T comparable](arr []T) []T {
 		}
 	}
 	return uniq
+}
+
+func printPlayerFields(p *player) {
+	fmt.Println(p.name)
+		for column := range p.dice {
+			for row := range p.dice[column] {
+				var state int
+				if p.desk_position {
+					state = p.dice[row][2-column] // "2 - column" it is necessary, since we output the matrix of the second player in the direction to the matrix of the first player
+				} else {
+					state = p.dice[row][column]
+				}
+				if state != 0 {
+					fmt.Print(state)
+				} else {
+					fmt.Print(" ")
+				}
+				fmt.Print(" ")
+			}
+			fmt.Print("\n")
+		}
+
+		fmt.Print("\n")
+		fmt.Printf("Score: %d", p.points)
 }
