@@ -117,6 +117,12 @@ func main() {
 		go player_1.diceIsFull(&wg, ch_dice_is_full)
 		wg.Wait() // wait for all goroutines to complete (zeroing the counter)
 
+		// if necessary, we move the numbers down the board
+		wg.Add(2)
+		go player_0.dropDiceNumbers(&wg)
+		go player_1.dropDiceNumbers(&wg)
+		wg.Wait()
+
 		// read results from channel and update boolean variable
 		for i := 0; i <= 1; i++ {
 			if res := <- ch_dice_is_full; res {
@@ -272,4 +278,32 @@ func printPlayerFields(p *player) {
 
 		fmt.Print("\n")
 		fmt.Printf("Score: %d", p.points)
+}
+
+func (p *player) dropDiceNumbers(wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for i := 0; i <= 2; i++ {
+		p.dice[i] = removeZeros(p.dice[i])
+	}
+}
+
+
+func removeZeros(column []int) []int {
+	var nonZeros []int
+
+	for _, value := range column {
+		if value != 0 {
+			nonZeros = append(nonZeros, value)
+		}
+	}
+
+	if len(nonZeros) == 0 {
+		return column
+	} else {
+		if len(nonZeros) < 3 {
+			nonZeros = append(make([]int, 3-len(nonZeros)), nonZeros...) // Fill with zeros at the beginning
+		}
+		return nonZeros
+	}
 }
