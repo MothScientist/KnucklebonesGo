@@ -10,4 +10,4 @@ _The game is designed for 2 players!_
 
 - Make sure you have one of the specified or intermediate versions of Golang installed
 - Go to the required directory
-- Run the command: go run main.go
+- Run the command: ```go run main.go```
