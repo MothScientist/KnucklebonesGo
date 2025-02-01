@@ -1,6 +1,8 @@
 # KnucklebonesGo
 
-The Knucklebones dice game in Cult of the Lamb. Implemented in Golang, running the game inside the console (bash, cmd)
+The Knucklebones dice game in **Cult of the Lamb**. Implemented in Golang, running the game inside the console (bash, cmd)
+
+_The game is designed for 2 players!_
 
 ![Master of Chance](master_of_chance.png)
 
