@@ -1,6 +1,6 @@
 # KnucklebonesGo
 
-The Knucklebones dice game in **Cult of the Lamb**. Implemented in Golang, running the game inside the console (bash, cmd)
+The Knucklebones dice game in [**Cult of the Lamb**](https://en.wikipedia.org/wiki/Cult_of_the_Lamb). Implemented in Golang, running the game inside the console (bash, cmd)
 
 _The game is designed for 2 players!_
 
