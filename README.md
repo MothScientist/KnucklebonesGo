@@ -2,6 +2,8 @@
 
 The Knucklebones dice game in Cult of the Lamb. Implemented in Golang, running the game inside the console (bash, cmd)
 
+![Master of Chance](master_of_chance.png)
+
 ## Launch
 
 - Make sure you have one of the specified or intermediate versions of Golang installed
