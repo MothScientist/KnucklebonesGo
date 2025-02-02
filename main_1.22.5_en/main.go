@@ -10,53 +10,71 @@ import (
 	"time"
 )
 
+const (
+	Reset   = "\033[0m"  // color reset
+	Green   = "\033[32m" //
+	Red     = "\033[31m"
+	Yellow  = "\033[33m"
+	Blue    = "\033[34m"
+	Cyan    = "\033[36m"
+	Magenta = "\033[35m"
+)
+
 type player struct {
-	dice          [][]int // Current decomposition of bones
-	points        int     // Total points (current)
-	name          string  // Player name (entered at the beginning of the game)
-	desk_position bool    // Displays in the player console from above or below
+	dice         [][]int // Current decomposition of bones
+	points       int     // Total points (current)
+	name         string  // Player name (entered at the beginning of the game)
+	deskPosition bool    // Displays in the player console from above or below
 }
 
 func main() {
 	// entry point
 
-	player_0 := player{
+	player0 := player{
 		dice: [][]int{
 			{0, 0, 0},
 			{0, 0, 0},
 			{0, 0, 0},
 		},
-		points:        0,
-		name:          "",
-		desk_position: false, // 0 -> we bring out this player's field first
+		points:       0,
+		name:         "",
+		deskPosition: false, // 0 -> we bring out this player's field first
 	}
 
-	player_1 := player{
+	player1 := player{
 		dice: [][]int{
 			{0, 0, 0},
 			{0, 0, 0},
 			{0, 0, 0},
 		},
-		points:        0,
-		name:          "",
-		desk_position: true, // 1
+		points:       0,
+		name:         "",
+		deskPosition: true, // 1
 	}
 
-	fmt.Println("Name of 1st player:")
-	fmt.Scanf("%s\n", &player_0.name)
+	fmt.Printf("%sName of the 1st player:%s\n", Yellow, Reset)
 
-	fmt.Println("Name of the 2nd player:")
-	fmt.Scanf("%s\n", &player_1.name)
+	_, err := fmt.Scanf("%s\n", &player0.name)
+	if err != nil {
+		return
+	}
+
+	fmt.Printf("%sName of the 2nd player:%s\n", Yellow, Reset)
+
+	_, err = fmt.Scanf("%s\n", &player1.name)
+	if err != nil {
+		return
+	}
 	fmt.Print("\n")
 
 	step := true // variable that determines which player is currently moving
 
-	var cur_player player   // we store a reference to the player who is currently making a move
-	var other_player player // link to the second player
+	var curPlayer player   // we store a reference to the player who is currently making a move
+	var otherPlayer player // link to the second player
 
 	var number int // the number we get in each round
 
-	var new_state int // the number of the column in which the player wants to write the number
+	var newState int // the number of the column in which the player wants to write the number
 
 	var wg sync.WaitGroup // counter variable for waiting for goroutines
 
@@ -66,36 +84,39 @@ func main() {
 		step = !step // pass the turn to another player
 
 		// we print the players' fields:
-		printPlayerFields(&player_0)
+		printPlayerFields(&player0)
 		fmt.Print("\n\n\n")
-		printPlayerFields(&player_1)
+		printPlayerFields(&player1)
 
 		// take the players' data depending on the move
 		if step {
-			cur_player = player_1
-			other_player = player_0
+			curPlayer = player1
+			otherPlayer = player0
 		} else {
-			cur_player = player_0
-			other_player = player_1
+			curPlayer = player0
+			otherPlayer = player1
 		}
 
 		fmt.Print("\n\n\n")
 
 		// print the name of the player who moves and his new number:
-		fmt.Printf("%s, your move!", cur_player.name)
+		fmt.Printf("%s%s, your move!%s", Green, curPlayer.name, Reset)
 		fmt.Print("\n")
 		number = getRandomDice()
-		fmt.Printf("Your number: %d", number)
+		fmt.Printf("%sYour number: %d%s", Red, number, Reset)
 		fmt.Print("\n")
-		availableColumns := cur_player.getAvailableColumns()
+		availableColumns := curPlayer.getAvailableColumns()
 		for {
 			fmt.Print("In which column should this cube be placed [1-3]: ")
-			fmt.Fscan(os.Stdin, &new_state)
-			new_state -= 1 // array starts from zero
-			if slices.Contains(availableColumns, new_state) {
-				cur_player.dice[new_state][getIndexToInsertDice(cur_player.dice[new_state])] = number
+			_, err := fmt.Fscan(os.Stdin, &newState)
+			if err != nil {
+				return
+			}
+			newState -= 1 // array starts from zero
+			if slices.Contains(availableColumns, newState) {
+				curPlayer.dice[newState][getIndexToInsertDice(curPlayer.dice[newState])] = number
 				break
-			} else if new_state < 1 || new_state > 3 {
+			} else if newState < 1 || newState > 3 {
 				fmt.Println("Such column does not exist")
 			} else {
 				fmt.Println("This column is already filled in.")
@@ -103,34 +124,34 @@ func main() {
 		}
 
 		// we look to see if the user's bones are "knocked down"
-		other_player.reCalcDice(new_state, cur_player.dice[new_state])
+		otherPlayer.reCalcDice(newState, curPlayer.dice[newState])
 
 		// we recalculate points for both players after the move and "knocking out" the opponent's dice
 		wg.Add(4) // launch 4 goroutines
-		go player_0.calcPoints(&wg)
-		go player_1.calcPoints(&wg)
+		go player0.calcPoints(&wg)
+		go player1.calcPoints(&wg)
 
-		ch_dice_is_full := make(chan bool, 2)
-		dice_is_full := false
+		chDiceIsFull := make(chan bool, 2)
+		diceIsFull := false
 		// look to see if one of the players has a filled field
-		go player_0.diceIsFull(&wg, ch_dice_is_full)
-		go player_1.diceIsFull(&wg, ch_dice_is_full)
+		go player0.diceIsFull(&wg, chDiceIsFull)
+		go player1.diceIsFull(&wg, chDiceIsFull)
 		wg.Wait() // wait for all goroutines to complete (zeroing the counter)
 
 		// if necessary, we move the numbers down the board
 		wg.Add(2)
-		go player_0.dropDiceNumbers(&wg)
-		go player_1.dropDiceNumbers(&wg)
+		go player0.dropDiceNumbers(&wg)
+		go player1.dropDiceNumbers(&wg)
 		wg.Wait()
 
 		// read results from channel and update boolean variable
 		for i := 0; i <= 1; i++ {
-			if res := <- ch_dice_is_full; res {
-				dice_is_full = true
+			if res := <-chDiceIsFull; res {
+				diceIsFull = true
+			}
 		}
-	}
 
-		if dice_is_full {
+		if diceIsFull {
 			break // if someone's field is filled, then we exit the game
 		}
 
@@ -138,15 +159,15 @@ func main() {
 
 	clearConsole() // clearing the console before announcing the winner
 
-	fmt.Printf("%s - %d\n", player_0.name, player_0.points)
-	fmt.Printf("%s - %d\n", player_1.name, player_1.points)
+	fmt.Printf("%s%s - %d\n", Blue, player0.name, player0.points)
+	fmt.Printf("%s%s - %d%s\n", Blue, player1.name, player1.points, Reset)
 
-	if player_0.points > player_1.points {
-		fmt.Printf("Winner: %s\n", player_0.name)
-	} else if player_1.points > player_0.points {
-		fmt.Printf("Winner: %s\n", player_1.name)
+	if player0.points > player1.points {
+		fmt.Printf("%sWinner: %s%s\n", Green, player0.name, Reset)
+	} else if player1.points > player0.points {
+		fmt.Printf("%sWinner: %s%s\n", Green, player1.name, Reset)
 	} else {
-		fmt.Println("Draw!")
+		fmt.Printf("%sDraw!%s\n", Green, Reset)
 	}
 }
 
@@ -156,8 +177,8 @@ func (p *player) calcPoints(wg *sync.WaitGroup) {
 	points := 0
 
 	for column := range p.dice {
-		slice_copy := getUniqueElements(p.dice[column]) // necessary to eliminate repetitions in order to correctly calculate the multipliers
-		for _, value := range slice_copy {
+		sliceCopy := getUniqueElements(p.dice[column]) // necessary to eliminate repetitions in order to correctly calculate the multipliers
+		for _, value := range sliceCopy {
 			factor := count(value, p.dice[column])
 			if factor == 3 {
 				points += (value * 3) * 3
@@ -231,14 +252,17 @@ func getIndexToInsertDice(dice []int) int {
 func clearConsole() {
 	c := exec.Command("clear")
 	c.Stdout = os.Stdout
-	c.Run()
+	err := c.Run()
+	if err != nil {
+		return
+	}
 }
 
 // Returns the number of occurrences of a number in an array
 func count(value int, arr []int) int {
 	res := 0
-	for _, arr_val := range arr {
-		if arr_val == value {
+	for _, arrVal := range arr {
+		if arrVal == value {
 			res += 1
 		}
 	}
@@ -257,27 +281,27 @@ func getUniqueElements[T comparable](arr []T) []T {
 }
 
 func printPlayerFields(p *player) {
-	fmt.Println(p.name)
-		for column := range p.dice {
-			for row := range p.dice[column] {
-				var state int
-				if p.desk_position {
-					state = p.dice[row][2-column] // "2 - column" it is necessary, since we output the matrix of the second player in the direction to the matrix of the first player
-				} else {
-					state = p.dice[row][column]
-				}
-				if state != 0 {
-					fmt.Print(state)
-				} else {
-					fmt.Print(" ")
-				}
+	fmt.Printf("%s%s%s\n", Magenta, p.name, Cyan)
+	for column := range p.dice {
+		for row := range p.dice[column] {
+			var state int
+			if p.deskPosition {
+				state = p.dice[row][2-column] // "2 - column" it is necessary, since we output the matrix of the second player in the direction to the matrix of the first player
+			} else {
+				state = p.dice[row][column]
+			}
+			if state != 0 {
+				fmt.Printf("%d", state)
+			} else {
 				fmt.Print(" ")
 			}
-			fmt.Print("\n")
+			fmt.Print(" ")
 		}
-
 		fmt.Print("\n")
-		fmt.Printf("Score: %d", p.points)
+	}
+
+	fmt.Print("\n")
+	fmt.Printf("%s%sScore: %d%s", Reset, Magenta, p.points, Reset)
 }
 
 func (p *player) dropDiceNumbers(wg *sync.WaitGroup) {
@@ -287,7 +311,6 @@ func (p *player) dropDiceNumbers(wg *sync.WaitGroup) {
 		p.dice[i] = removeZeros(p.dice[i])
 	}
 }
-
 
 func removeZeros(column []int) []int {
 	var nonZeros []int
