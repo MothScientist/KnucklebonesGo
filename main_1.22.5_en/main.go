@@ -12,7 +12,7 @@ import (
 
 const (
 	Reset   = "\033[0m"  // color reset
-	Green   = "\033[32m" //
+	Green   = "\033[32m"
 	Red     = "\033[31m"
 	Yellow  = "\033[33m"
 	Blue    = "\033[34m"
@@ -49,7 +49,7 @@ func main() {
 		},
 		points:       0,
 		name:         "",
-		deskPosition: true, // 1
+		deskPosition: true,
 	}
 
 	fmt.Printf("%sName of the 1st player:%s\n", Yellow, Reset)
