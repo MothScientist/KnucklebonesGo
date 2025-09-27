@@ -6,12 +6,11 @@ import (
 	"os"
 	"os/exec"
 	"slices"
-	"sync"
 	"time"
 )
 
 const (
-	Reset   = "\033[0m"  // color reset
+	Reset   = "\033[0m" // color reset
 	Green   = "\033[32m"
 	Red     = "\033[31m"
 	Yellow  = "\033[33m"
@@ -28,8 +27,6 @@ type player struct {
 }
 
 func main() {
-	// entry point
-
 	player0 := player{
 		dice: [][]int{
 			{0, 0, 0},
@@ -69,14 +66,13 @@ func main() {
 
 	step := true // variable that determines which player is currently moving
 
-	var curPlayer player   // we store a reference to the player who is currently making a move
-	var otherPlayer player // link to the second player
+	var (
+		curPlayer   player // we store a reference to the player who is currently making a move
+		otherPlayer player // link to the second player
 
-	var number int // the number we get in each round
-
-	var newState int // the number of the column in which the player wants to write the number
-
-	var wg sync.WaitGroup // counter variable for waiting for goroutines
+		number   int // the number we get in each round
+		newState int // the number of the column in which the player wants to write the number
+	)
 
 	for { // we start an infinite loop, from which we will exit only if diceIsFull() returns true
 		clearConsole() // clearing the console
@@ -85,7 +81,7 @@ func main() {
 
 		// we print the players' fields:
 		printPlayerFields(&player0)
-		fmt.Print("\n\n\n")
+		fmt.Print("\n")
 		printPlayerFields(&player1)
 
 		// take the players' data depending on the move
@@ -97,7 +93,7 @@ func main() {
 			otherPlayer = player1
 		}
 
-		fmt.Print("\n\n\n")
+		fmt.Print("\n")
 
 		// print the name of the player who moves and his new number:
 		fmt.Printf("%s%s, your move!%s", Green, curPlayer.name, Reset)
@@ -127,33 +123,22 @@ func main() {
 		otherPlayer.reCalcDice(newState, curPlayer.dice[newState])
 
 		// we recalculate points for both players after the move and "knocking out" the opponent's dice
-		wg.Add(4) // launch 4 goroutines
-		go player0.calcPoints(&wg)
-		go player1.calcPoints(&wg)
+		player0.calcPoints()
+		player1.calcPoints()
 
-		chDiceIsFull := make(chan bool, 2)
-		diceIsFull := false
 		// look to see if one of the players has a filled field
-		go player0.diceIsFull(&wg, chDiceIsFull)
-		go player1.diceIsFull(&wg, chDiceIsFull)
-		wg.Wait() // wait for all goroutines to complete (zeroing the counter)
-
-		// if necessary, we move the numbers down the board
-		wg.Add(2)
-		go player0.dropDiceNumbers(&wg)
-		go player1.dropDiceNumbers(&wg)
-		wg.Wait()
-
-		// read results from channel and update boolean variable
-		for i := 0; i <= 1; i++ {
-			if res := <-chDiceIsFull; res {
-				diceIsFull = true
-			}
+		diceIsFull := player0.diceIsFull()
+		if !diceIsFull {
+			diceIsFull = player1.diceIsFull()
 		}
 
 		if diceIsFull {
 			break // if someone's field is filled, then we exit the game
 		}
+
+		// if necessary, we move the numbers down the board
+		player0.dropDiceNumbers()
+		player1.dropDiceNumbers()
 
 	}
 
@@ -171,15 +156,12 @@ func main() {
 	}
 }
 
-func (p *player) calcPoints(wg *sync.WaitGroup) {
-	defer wg.Done() // after goroutine execution we subtract one from the counter
-
+func (p *player) calcPoints() {
 	points := 0
-
 	for column := range p.dice {
 		sliceCopy := getUniqueElements(p.dice[column]) // necessary to eliminate repetitions in order to correctly calculate the multipliers
 		for _, value := range sliceCopy {
-			factor := count(value, p.dice[column])
+			factor := countValuesInArray(value, p.dice[column])
 			if factor == 3 {
 				points += (value * 3) * 3
 			} else if factor == 2 {
@@ -189,7 +171,6 @@ func (p *player) calcPoints(wg *sync.WaitGroup) {
 			}
 		}
 	}
-
 	p.points = points
 }
 
@@ -209,18 +190,15 @@ func getRandomDice() int {
 }
 
 // Determines that the game is over -> the player has all fields inside the dice filled after the move
-func (p *player) diceIsFull(wg *sync.WaitGroup, ch chan bool) {
-	defer wg.Done()
-
+func (p *player) diceIsFull() bool {
 	for column := range p.dice {
 		for row := range p.dice[column] {
 			if p.dice[column][row] == 0 {
-				ch <- false
-				return
+				return false
 			}
 		}
 	}
-	ch <- true
+	return true
 }
 
 // Get a list of writable columns
@@ -259,7 +237,7 @@ func clearConsole() {
 }
 
 // Returns the number of occurrences of a number in an array
-func count(value int, arr []int) int {
+func countValuesInArray(value int, arr []int) int {
 	res := 0
 	for _, arrVal := range arr {
 		if arrVal == value {
@@ -286,7 +264,9 @@ func printPlayerFields(p *player) {
 		for row := range p.dice[column] {
 			var state int
 			if p.deskPosition {
-				state = p.dice[row][2-column] // "2 - column" it is necessary, since we output the matrix of the second player in the direction to the matrix of the first player
+				// "2 - column": since we output the matrix of the second player
+				// in the direction to the matrix of the first player
+				state = p.dice[row][2-column]
 			} else {
 				state = p.dice[row][column]
 			}
@@ -299,14 +279,10 @@ func printPlayerFields(p *player) {
 		}
 		fmt.Print("\n")
 	}
-
-	fmt.Print("\n")
-	fmt.Printf("%s%sScore: %d%s", Reset, Magenta, p.points, Reset)
+	fmt.Printf("%s%sScore: %d%s\n", Reset, Magenta, p.points, Reset)
 }
 
-func (p *player) dropDiceNumbers(wg *sync.WaitGroup) {
-	defer wg.Done()
-
+func (p *player) dropDiceNumbers() {
 	for i := 0; i <= 2; i++ {
 		p.dice[i] = removeZeros(p.dice[i])
 	}
