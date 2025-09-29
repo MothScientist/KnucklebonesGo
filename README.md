@@ -4,7 +4,7 @@ The Knucklebones dice game in [**Cult of the Lamb**](https://en.wikipedia.org/wi
 
 _The game is designed for 2 players!_
 
-![Master of Chance](master_of_chance.png)
+![Master of Chance](img/master_of_chance.png)
 
 ## Launch
 
@@ -13,7 +13,7 @@ _The game is designed for 2 players!_
 - Run the command: ```go run main.go```
 
 ### Original game:
-![Knucklebones](lamb.gif)
+![Knucklebones](img/lamb.gif)
 
 ### KnucklebonesGo:
-![Knucklebones](knuck.gif)
+![Knucklebones](img/knuck.gif)
