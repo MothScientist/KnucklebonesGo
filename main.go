@@ -156,6 +156,7 @@ func main() {
 	}
 }
 
+// calcPoints player score calculation
 func (p *player) calcPoints() {
 	points := 0
 	for column := range p.dice {
@@ -174,7 +175,7 @@ func (p *player) calcPoints() {
 	p.points = points
 }
 
-// Recalculates dice after opponent's move
+// reCalcDice recalculates dice after opponent's move
 func (p *player) reCalcDice(column int, opponentColumnDice []int) {
 	for idx, value := range p.dice[column] {
 		if slices.Contains(opponentColumnDice, value) {
@@ -183,13 +184,13 @@ func (p *player) reCalcDice(column int, opponentColumnDice []int) {
 	}
 }
 
-// Gets a random number 1-6 (inclusive)
+// getRandomDice gets a random number 1-6 (inclusive)
 func getRandomDice() int {
 	// update seed before use - otherwise everything comes down to one number
 	return rand.New(rand.NewSource(time.Now().UnixNano())).Intn(6) + 1
 }
 
-// Determines that the game is over -> the player has all fields inside the dice filled after the move
+// diceIsFull determines that the game is over -> the player has all fields inside the dice filled after the move
 func (p *player) diceIsFull() bool {
 	for column := range p.dice {
 		for row := range p.dice[column] {
@@ -201,7 +202,7 @@ func (p *player) diceIsFull() bool {
 	return true
 }
 
-// Get a list of writable columns
+// getAvailableColumns get a list of writable columns
 func (p *player) getAvailableColumns() []int {
 	var res []int // we write the available columns into this slice
 	for column := range p.dice {
@@ -215,7 +216,7 @@ func (p *player) getAvailableColumns() []int {
 	return res
 }
 
-// Returns the position to write to the string - (0, 1, 2)
+// getIndexToInsertDice returns the position to write to the string - (0, 1, 2)
 func getIndexToInsertDice(dice []int) int {
 	var res int
 	for idx, value := range dice {
@@ -226,7 +227,7 @@ func getIndexToInsertDice(dice []int) int {
 	return res
 }
 
-// Console clearing function
+// clearConsole completely clears the console
 func clearConsole() {
 	c := exec.Command("clear")
 	c.Stdout = os.Stdout
@@ -236,7 +237,7 @@ func clearConsole() {
 	}
 }
 
-// Returns the number of occurrences of a number in an array
+// countValuesInArray returns the number of occurrences of a number in an array
 func countValuesInArray(value int, arr []int) int {
 	res := 0
 	for _, arrVal := range arr {
@@ -247,7 +248,7 @@ func countValuesInArray(value int, arr []int) int {
 	return res
 }
 
-// Return slice without duplicate elements
+// getUniqueElements return slice without duplicate elements
 func getUniqueElements[T comparable](arr []T) []T {
 	m, uniq := make(map[T]struct{}), make([]T, 0, len(arr))
 	for _, v := range arr {
@@ -258,6 +259,7 @@ func getUniqueElements[T comparable](arr []T) []T {
 	return uniq
 }
 
+// printPlayerFields prints the player's field according to his parameters to the console
 func printPlayerFields(p *player) {
 	fmt.Printf("%s%s%s\n", Magenta, p.name, Cyan)
 	for column := range p.dice {
@@ -282,12 +284,14 @@ func printPlayerFields(p *player) {
 	fmt.Printf("%s%sScore: %d%s\n", Reset, Magenta, p.points, Reset)
 }
 
+// dropDiceNumbers replaces empty bottom cells with dice
 func (p *player) dropDiceNumbers() {
 	for i := 0; i <= 2; i++ {
 		p.dice[i] = removeZeros(p.dice[i])
 	}
 }
 
+// removeZeros removes zeros from a slice
 func removeZeros(column []int) []int {
 	var nonZeros []int
 
